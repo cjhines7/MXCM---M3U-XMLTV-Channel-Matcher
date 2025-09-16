@@ -33,6 +33,8 @@ This file stores the primary settings for the application. If it doesn't exist, 
 [Paths]
 m3u_folder = C:\Path\To\Your\M3U_Files
 xmltv_folder = C:\Path\To\Your\XMLTV_Files
+output_m3u_folder = Sources\Output
+output_xmltv_folder = Sources\Output
 
 [Settings]
 fuzzy_threshold = 85
@@ -41,6 +43,8 @@ player_path = vlc
 
 -   `m3u_folder`: The directory where your M3U files are located and/or will be downloaded.
 -   `xmltv_folder`: The directory where your XMLTV files are located and/or will be downloaded.
+-   `output_m3u_folder`: The output directory where your M3U files are saved.
+-   `output_xmltv_folder`: The output directory where your XMLTV files are saved.
 -   `fuzzy_threshold`: The default matching score (0-100) required to consider a channel "matched".
 -   `player_path`: The command to launch your media player (e.g., `vlc`, `C:\Program Files\VLC\vlc.exe`).
 
