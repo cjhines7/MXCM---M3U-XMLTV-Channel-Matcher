@@ -1,0 +1,6 @@
+fuzzywuzzy
+requests
+python-Levenshtein
+pyinstaller
+Pillow
+lxml

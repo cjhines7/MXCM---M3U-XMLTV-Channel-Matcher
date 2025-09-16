@@ -20,6 +20,22 @@ A powerful and flexible tool for matching channels from M3U playlists with elect
 -   **🗂️ Category Management**: Remove entire groups/categories of channels from your M3U playlist with a few clicks.
 -   **▶️ Stream Testing**: Instantly test a channel's stream by opening it in your default media player (e.g., VLC).
 
+## 🛠️ Requirements
+
+-   Python 3.x
+-   The following Python libraries:
+    -   `requests`
+    -   `fuzzywuzzy`
+    -   `python-Levenshtein` (recommended for a significant performance boost with `fuzzywuzzy`)
+
+## 🚀 Installation
+
+1.  Clone this repository or download the source code.
+2.  Install the required Python libraries using pip:
+    ```bash
+    pip install requests fuzzywuzzy python-Levenshtein
+    ```
+3.  You are ready to go!
 
 ## ⚙️ Configuration
 
@@ -43,8 +59,6 @@ player_path = vlc
 
 -   `m3u_folder`: The directory where your M3U files are located and/or will be downloaded.
 -   `xmltv_folder`: The directory where your XMLTV files are located and/or will be downloaded.
--   `output_m3u_folder`: The output directory where your M3U files are saved.
--   `output_xmltv_folder`: The output directory where your XMLTV files are saved.
 -   `fuzzy_threshold`: The default matching score (0-100) required to consider a channel "matched".
 -   `player_path`: The command to launch your media player (e.g., `vlc`, `C:\Program Files\VLC\vlc.exe`).
 
@@ -67,6 +81,20 @@ This file tells the downloader *what* to download. It's a simple list of URLs fo
 
 ## 🏁 Usage
 
+### GUI Mode 🖥️
+
+You can run the app either as a Python script or as a standalone executable:
+
+**With Python:**
+```powershell
+python main.py
+```
+
+**With the EXE:**
+```powershell
+MXMM.exe
+```
+
 **Workflow:**
 1.  **📂 Set Folders**: Use the "Browse..." buttons to select your M3U and XMLTV folders.
 2.  **⬇️ Download (Optional)**: Click "Download Sources from JSON" to fetch the latest files. You'll be asked if you want to clean the destination folders first.
@@ -80,27 +108,35 @@ This file tells the downloader *what* to download. It's a simple list of URLs fo
 
 ### Command-Line (Headless) Mode 🖥️💻
 
-You can also use command-line arguments for automation. The app will run without a GUI and perform all actions sequentially.
+You can also use command-line arguments for automation, with either Python or the EXE. The app will run without a GUI and perform all actions sequentially.
 
 To see all available options, run:
-```
+```powershell
+python main.py --help
+# or
 MXMM.exe --help
 ```
 
 **Examples:**
 
 **1. Full Automation:** Clean destination folders, download new sources, match with a threshold of 85, and generate new output files.
-```
+```powershell
+python main.py --download --clean-folders --threshold 85 --output-m3u "MyChannels.m3u" --output-xmltv "MyGuide.xml.gz"
+# or
 MXMM.exe --download --clean-folders --threshold 85 --output-m3u "MyChannels.m3u" --output-xmltv "MyGuide.xml.gz"
 ```
 
 **2. Process Local Files:** Match existing files from specific folders and generate the output.
-```
+```powershell
+python main.py --m3u-folder "C:\M3U" --xmltv-folder "C:\XMLTV" --output-m3u "matched.m3u" --output-xmltv "guide.xml"
+# or
 MXMM.exe --m3u-folder "C:\M3U" --xmltv-folder "C:\XMLTV" --output-m3u "matched.m3u" --output-xmltv "guide.xml"
 ```
 
 **3. Quick Update:** Download sources (overwriting old ones) and generate new files using the settings from `matcher_app_config.ini`.
-```
+```powershell
+python main.py --download --output-m3u "playlist.m3u" --output-xmltv "epg.xml.gz"
+# or
 MXMM.exe --download --output-m3u "playlist.m3u" --output-xmltv "epg.xml.gz"
 ```
 
