@@ -172,8 +172,10 @@ class MXMMApp:
 
         tree_container = tk.Frame(parent_frame)
         tree_container.pack(fill="both", expand=True, padx=10, pady=(0,10))
-        columns = ("selected", "m3u_group", "m3u_name", "xmltv_name", "match_score")
+        columns = ("row_number", "selected", "m3u_group", "m3u_name", "xmltv_name", "match_score")
         self.tree = ttk.Treeview(tree_container, columns=columns, show="headings")
+        self.tree.heading("row_number", text="#", command=lambda: self._sort_treeview_column("row_number"))
+        self.tree.column("row_number", width=60, stretch=tk.NO, anchor="center")
         self.tree.heading("selected", text="✓", command=self._toggle_select_all)
         self.tree.column("selected", width=30, stretch=tk.NO, anchor="center")
         self.tree.heading("m3u_group", text="M3U Group", command=lambda: self._sort_treeview_column("m3u_group"))
@@ -460,11 +462,23 @@ class MXMMApp:
 
     def _refresh_treeview(self):
         logger.info("Refreshing Treeview display.")
-        for iid in self.tree.get_children(): self.tree.delete(iid)
+        
+        # Clear existing items efficiently
+        for iid in self.tree.get_children(): 
+            self.tree.delete(iid)
+        
+        if not self.processed_channels_data:
+            logger.warning("No processed channels data to display.")
+            self._update_match_counts()
+            return
+            
         threshold = self.fuzzy_threshold.get()
         m3u_filter = self.filter_m3u_name.get().lower().strip()
         xmltv_filter = self.filter_xmltv_name.get().lower().strip()
         
+        logger.info(f"Starting treeview refresh with {len(self.processed_channels_data)} total channels.")
+        
+        # Apply filters
         filtered_data = self.processed_channels_data
         if self.show_only_matched.get():
             filtered_data = [d for d in filtered_data if d['xmltv_match'] and d['score'] >= threshold]
@@ -477,8 +491,12 @@ class MXMMApp:
         if xmltv_filter:
             filtered_data = [d for d in filtered_data if d['xmltv_match'] and xmltv_filter in d['xmltv_match']['display_name'].lower()]
         
+        logger.info(f"After filtering: {len(filtered_data)} channels to display.")
+        
+        # Sort data
         def get_sort_value(item_data):
             col = self._tree_sort_column
+            if col == "row_number": return channel_to_idx.get(id(item_data), 0)  # Sort by original position
             if col == "selected": return item_data['selected']
             if col == "m3u_name": return item_data['m3u_data']['name'].lower()
             if col == "m3u_group": return item_data['m3u_data'].get('group_title', '').lower()
@@ -486,17 +504,43 @@ class MXMMApp:
             if col == "match_score": return item_data['score']
             return ""
 
+        # Build the lookup dictionary before sorting (need it for row_number sorting)
+        channel_to_idx = {id(item_data): idx for idx, item_data in enumerate(self.processed_channels_data)}
         sorted_data = sorted(filtered_data, key=get_sort_value, reverse=self._tree_sort_reverse)
-
-        for item_data in sorted_data:
-            original_idx = self.processed_channels_data.index(item_data)
-            selected_status = "✓" if item_data['selected'] else "✗"
-            m3u_group = item_data['m3u_data'].get('group_title', '')
-            m3u_name = item_data['m3u_data']['name']
-            xmltv_name = item_data['xmltv_match']['display_name'] if item_data['xmltv_match'] else "--- No Match ---"
-            score = item_data['score']
-            tags = ('high_match',) if score >= 95 else ('good_match',) if score >= threshold else ('low_match',) if score > 0 else ('no_match',)
-            self.tree.insert("", "end", iid=str(original_idx), values=(selected_status, m3u_group, m3u_name, xmltv_name, score), tags=tags)
+        
+        # For large datasets, limit display to avoid UI freezing
+        max_display_items = 10000  # Configurable limit
+        if len(sorted_data) > max_display_items:
+            logger.warning(f"Large dataset detected ({len(sorted_data)} items). Displaying first {max_display_items} items only.")
+            sorted_data = sorted_data[:max_display_items]
+        
+        # Batch insert items for better performance
+        logger.info(f"Inserting {len(sorted_data)} items into treeview...")
+        
+        try:
+            for i, item_data in enumerate(sorted_data):
+                if i % 1000 == 0 and i > 0:
+                    logger.info(f"Inserted {i}/{len(sorted_data)} items...")
+                    
+                original_idx = channel_to_idx.get(id(item_data), -1)
+                if original_idx == -1:
+                    logger.error(f"Could not find original index for item {i}")
+                    continue
+                    
+                row_number = original_idx + 1  # Display as 1-based numbering
+                selected_status = "✓" if item_data['selected'] else "✗"
+                m3u_group = item_data['m3u_data'].get('group_title', '')
+                m3u_name = item_data['m3u_data']['name']
+                xmltv_name = item_data['xmltv_match']['display_name'] if item_data['xmltv_match'] else "--- No Match ---"
+                score = item_data['score']
+                tags = ('high_match',) if score >= 95 else ('good_match',) if score >= threshold else ('low_match',) if score > 0 else ('no_match',)
+                
+                self.tree.insert("", "end", iid=str(original_idx), values=(row_number, selected_status, m3u_group, m3u_name, xmltv_name, score), tags=tags)
+                
+            logger.info(f"Successfully inserted {len(sorted_data)} items into treeview.")
+            
+        except Exception as e:
+            logger.error(f"Error during treeview population: {e}", exc_info=True)
         
         self._update_match_counts()
 
@@ -514,7 +558,7 @@ class MXMMApp:
 
     def _on_tree_click(self, event):
         item_id = self.tree.identify_row(event.y)
-        if item_id and self.tree.identify_column(event.x) == '#1':
+        if item_id and self.tree.identify_column(event.x) == '#2':  # Updated to column #2 (selected column)
             idx = int(item_id)
             self.processed_channels_data[idx]['selected'] = not self.processed_channels_data[idx]['selected']
             self.tree.set(item_id, "selected", "✓" if self.processed_channels_data[idx]['selected'] else "✗")
@@ -712,12 +756,22 @@ class MXMMApp:
             messagebox.showerror("Error", f"Could not launch player '{player}': {e}")
 
     def _update_match_counts(self):
+        if not self.processed_channels_data:
+            self.match_count_label.config(text="ℹ️ Load channels to see statistics.")
+            return
+            
         total = len(self.processed_channels_data)
         threshold = self.fuzzy_threshold.get()
         matched = sum(1 for item in self.processed_channels_data if item['xmltv_match'] and item['score'] >= threshold)
         selected = sum(1 for item in self.processed_channels_data if item['selected'])
         displayed = len(self.tree.get_children())
-        self.match_count_label.config(text=f"Total: {total} | Matched: {matched} | Unmatched: {total - matched} | Selected for Output: {selected} | Displayed: {displayed}")
+        
+        # Check if we're showing a limited view
+        limit_warning = ""
+        if displayed == 10000 and total > 10000:
+            limit_warning = " ⚠️ (Showing first 10,000 of filtered results)"
+            
+        self.match_count_label.config(text=f"Total: {total} | Matched: {matched} | Unmatched: {total - matched} | Selected for Output: {selected} | Displayed: {displayed}{limit_warning}")
 
     def run_headless(self, args):
         """Runs the application in headless mode based on CLI arguments."""
