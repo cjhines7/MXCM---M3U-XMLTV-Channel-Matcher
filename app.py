@@ -152,7 +152,7 @@ class MXMMApp:
         self.play_stream_button.pack(side="left", padx=5, pady=5)
 
         settings_frame = tk.LabelFrame(right_col_frame, text="⚙️ Settings & Session", padx=5, pady=5)
-        settings_frame.pack(fill="both", expand=True, pady=(0, 5))
+        settings_frame.pack(fill="x", expand=False, pady=(0, 5))
         tk.Label(settings_frame, text="🎯 Fuzzy Match Threshold:").pack(pady=(0,2))
         self.threshold_slider = tk.Scale(settings_frame, from_=0, to=100, orient=tk.HORIZONTAL, variable=self.fuzzy_threshold, command=self._on_threshold_change)
         self.threshold_slider.pack(fill="x", expand=True, padx=5)
