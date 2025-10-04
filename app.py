@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import os
+import sys
 import json
 import configparser
 import subprocess
@@ -39,8 +40,27 @@ class MXMMApp:
     def _init_gui(self, master):
         """Initializes the full GUI application."""
         master.title("MXCM - M3U/XMLTV Channel Matcher")
-        master.geometry("1400x900")
-        master.state('zoomed')
+
+        # Platform-specific window maximization
+        if sys.platform == 'darwin':  # macOS
+            # macOS doesn't support zoomed state - use screen dimensions
+            screen_width = master.winfo_screenwidth()
+            screen_height = master.winfo_screenheight()
+            # Set to 90% of screen size, centered
+            width = int(screen_width * 0.9)
+            height = int(screen_height * 0.9)
+            x = (screen_width - width) // 2
+            y = (screen_height - height) // 2
+            master.geometry(f"{width}x{height}+{x}+{y}")
+        elif sys.platform == 'win32':  # Windows
+            master.geometry("1400x900")
+            master.state('zoomed')
+        else:  # Linux and others
+            master.geometry("1400x900")
+            try:
+                master.state('zoomed')
+            except:
+                pass  # If zoomed doesn't work, just use geometry
 
         self.m3u_folder_path = tk.StringVar()
         self.xmltv_folder_path = tk.StringVar()
@@ -215,6 +235,19 @@ class MXMMApp:
         self.loading_label = tk.Label(parent_frame, text="")
         self.progressbar = ttk.Progressbar(parent_frame, mode='indeterminate')
 
+    def _get_platform_defaults(self):
+        """Returns platform-specific default paths."""
+        defaults = {}
+
+        if sys.platform == 'darwin':  # macOS
+            defaults['player_path'] = '/Applications/VLC.app/Contents/MacOS/VLC'
+        elif sys.platform == 'win32':  # Windows
+            defaults['player_path'] = 'vlc'
+        else:  # Linux and others
+            defaults['player_path'] = 'vlc'
+
+        return defaults
+
     def _load_app_settings(self):
         """Loads application settings from config.ini."""
         try:
@@ -245,12 +278,13 @@ class MXMMApp:
 
     def _apply_initial_settings(self):
         """Applies loaded settings to the GUI widgets."""
+        platform_defaults = self._get_platform_defaults()
         self.m3u_folder_path.set(self.config.get('Paths', 'm3u_folder', fallback=''))
         self.xmltv_folder_path.set(self.config.get('Paths', 'xmltv_folder', fallback=''))
         self.output_m3u_folder = self.config.get('Paths', 'output_m3u_folder', fallback='')
         self.output_xmltv_folder = self.config.get('Paths', 'output_xmltv_folder', fallback='')
         self.fuzzy_threshold.set(self.config.getint('Settings', 'fuzzy_threshold', fallback=70))
-        self.player_path = self.config.get('Settings', 'player_path', fallback='vlc')
+        self.player_path = self.config.get('Settings', 'player_path', fallback=platform_defaults.get('player_path', 'vlc'))
 
     def _setup_gui_logger(self):
         """Sets up a custom logging handler to display logs in the GUI."""
@@ -749,7 +783,8 @@ class MXMMApp:
             return
         idx = int(selected[0])
         url = self.processed_channels_data[idx]['m3u_data']['url']
-        player = self.config.get('Settings', 'player_path', fallback='vlc')
+        platform_defaults = self._get_platform_defaults()
+        player = self.config.get('Settings', 'player_path', fallback=platform_defaults.get('player_path', 'vlc'))
         try:
             subprocess.Popen([player, url])
         except Exception as e:
