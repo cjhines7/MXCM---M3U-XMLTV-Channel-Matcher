@@ -85,6 +85,8 @@ class MXMMApp:
             self.tree.tag_configure('good_match', background=self.colors['good_match'], foreground=self.colors['fg'])
             self.tree.tag_configure('low_match', background=self.colors['low_match'], foreground=self.colors['fg'])
             self.tree.tag_configure('no_match', background=self.colors['no_match'], foreground=self.colors['fg'])
+            # Fix log text widget colors (explicitly set after creation)
+            self.log_text_widget.configure(bg=self.colors['entry_bg'], fg=self.colors['fg'])
 
     def _apply_headless_settings(self):
         """Applies settings for headless (CLI) mode."""
@@ -355,7 +357,9 @@ class MXMMApp:
             elif widget_type == 'Scale':
                 widget.configure(bg=self.colors['frame_bg'], fg=self.colors['label_fg'],
                                troughcolor=self.colors['entry_bg'],
-                               activebackground=self.colors['select_bg'])
+                               activebackground=self.colors['select_bg'],
+                               highlightbackground=self.colors['frame_bg'],
+                               highlightcolor=self.colors['select_bg'])
             elif widget_type == 'PanedWindow':
                 widget.configure(bg=self.colors['bg'], sashrelief='flat')
         except tk.TclError:
