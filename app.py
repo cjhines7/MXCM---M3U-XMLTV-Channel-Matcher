@@ -101,14 +101,14 @@ class MXMMApp:
         main_paned_window.pack(fill="both", expand=True)
 
         top_frame = tk.Frame(main_paned_window, bd=2, relief=tk.GROOVE)
-        main_paned_window.add(top_frame, minsize=200)
+        main_paned_window.add(top_frame, minsize=140)
 
         middle_frame = tk.Frame(main_paned_window, bd=2, relief=tk.GROOVE)
         main_paned_window.add(middle_frame, minsize=400)
 
         self.log_display_frame = tk.Frame(main_paned_window, bd=2, relief=tk.GROOVE)
         main_paned_window.add(self.log_display_frame, minsize=150)
-        main_paned_window.sash_place(0, 0, 240)
+        main_paned_window.sash_place(0, 0, 145)
         main_paned_window.sash_place(1, 0, 550)
 
         self._create_top_control_widgets(top_frame)
