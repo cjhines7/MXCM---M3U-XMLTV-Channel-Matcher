@@ -4,7 +4,8 @@ A powerful and flexible tool for matching channels from M3U playlists with elect
 
 
 <p align="center">
-<img src="./screenshot.png">
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a4e39be0-6cb3-4c0f-b9a3-eb6e467c1fee" />
+
 </p>
 
 ## ✨ Features
