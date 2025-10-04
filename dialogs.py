@@ -10,9 +10,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ManualMatchDialog(tk.Toplevel):
-    def __init__(self, parent, visible_channels_data, start_pos_in_visible, all_xmltv_channels, callback):
+    def __init__(self, parent, visible_channels_data, start_pos_in_visible, all_xmltv_channels, callback, dark_mode=False):
         super().__init__(parent)
         self.parent = parent
+        self.dark_mode = dark_mode
         self.transient(parent)
         self.grab_set()
         self.geometry("1000x750")
@@ -22,21 +23,26 @@ class ManualMatchDialog(tk.Toplevel):
         self.all_xmltv_channels = all_xmltv_channels
         self.callback = callback
         self.current_idx_in_visible = start_pos_in_visible
-        
+
         self._xmltv_display_names = [ch['display_name'] for ch in all_xmltv_channels]
         self._xmltv_name_to_data = {ch['display_name']: ch for ch in all_xmltv_channels}
-        
+
         self._search_timer = None
         self._sort_column = "score"
         self._sort_reverse = True
-        
+
         self.image_references = {} # To prevent garbage collection
 
         self._create_widgets()
+
+        # Apply dark theme if enabled
+        if self.dark_mode:
+            self._apply_dark_theme()
+
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
-        
+
         self._load_channel(self.current_idx_in_visible)
-        
+
         self.deiconify()
         self.wait_window()
 
@@ -286,13 +292,66 @@ class ManualMatchDialog(tk.Toplevel):
         
         self._load_channel(self.current_idx_in_visible)
 
+    def _apply_dark_theme(self):
+        """Applies dark theme to the dialog."""
+        colors = {
+            'bg': '#2b2b2b',
+            'fg': '#e0e0e0',
+            'button_bg': '#404040',
+            'button_fg': '#ffffff',
+            'entry_bg': '#3c3c3c',
+            'entry_fg': '#e0e0e0',
+            'select_bg': '#0d47a1',
+            'select_fg': '#ffffff',
+        }
+
+        self.configure(bg=colors['bg'])
+
+        # Configure ttk Style
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('Treeview',
+                       background=colors['entry_bg'],
+                       foreground=colors['fg'],
+                       fieldbackground=colors['entry_bg'])
+        style.configure('Treeview.Heading',
+                       background=colors['button_bg'],
+                       foreground=colors['fg'])
+        style.map('Treeview',
+                 background=[('selected', colors['select_bg'])],
+                 foreground=[('selected', colors['select_fg'])])
+
+        def apply_to_widget(widget):
+            widget_type = widget.winfo_class()
+            try:
+                if widget_type in ('Frame', 'Labelframe'):
+                    widget.configure(bg=colors['bg'])
+                elif widget_type == 'Label':
+                    widget.configure(bg=colors['bg'], fg=colors['fg'])
+                elif widget_type == 'Button':
+                    widget.configure(bg=colors['button_bg'], fg=colors['button_fg'],
+                                   activebackground=colors['select_bg'],
+                                   activeforeground=colors['select_fg'])
+                elif widget_type == 'Entry':
+                    widget.configure(bg=colors['entry_bg'], fg=colors['entry_fg'],
+                                   insertbackground=colors['fg'],
+                                   selectbackground=colors['select_bg'],
+                                   selectforeground=colors['select_fg'])
+            except tk.TclError:
+                pass
+            for child in widget.winfo_children():
+                apply_to_widget(child)
+
+        apply_to_widget(self)
+
     def _on_closing(self):
         self.destroy()
 
 class RemoveCategoryDialog(tk.Toplevel):
-    def __init__(self, parent, m3u_group_titles):
+    def __init__(self, parent, m3u_group_titles, dark_mode=False):
         super().__init__(parent)
         self.parent = parent
+        self.dark_mode = dark_mode
         self.transient(parent)
         self.grab_set()
         self.title("Remove M3U Categories")
@@ -312,6 +371,10 @@ class RemoveCategoryDialog(tk.Toplevel):
         button_frame.pack(pady=10)
         tk.Button(button_frame, text="Remove Selected", command=self._on_remove_selected).pack(side="left", padx=10)
         tk.Button(button_frame, text="Cancel", command=self._on_cancel).pack(side="left", padx=10)
+
+        if self.dark_mode:
+            self._apply_dark_theme()
+
         self.protocol("WM_DELETE_WINDOW", self._on_cancel)
         self.deiconify()
         self.wait_window()
@@ -322,14 +385,50 @@ class RemoveCategoryDialog(tk.Toplevel):
         self.groups_to_remove = ["" if group == "[No Group Title]" else group for group in self.groups_to_remove]
         self.destroy()
 
+    def _apply_dark_theme(self):
+        """Applies dark theme to the dialog."""
+        colors = {
+            'bg': '#2b2b2b',
+            'fg': '#e0e0e0',
+            'button_bg': '#404040',
+            'button_fg': '#ffffff',
+            'entry_bg': '#3c3c3c',
+            'select_bg': '#0d47a1',
+            'select_fg': '#ffffff',
+        }
+
+        self.configure(bg=colors['bg'])
+        self.group_listbox.configure(bg=colors['entry_bg'], fg=colors['fg'],
+                                     selectbackground=colors['select_bg'],
+                                     selectforeground=colors['select_fg'])
+
+        def apply_to_widget(widget):
+            widget_type = widget.winfo_class()
+            try:
+                if widget_type in ('Frame', 'Labelframe'):
+                    widget.configure(bg=colors['bg'])
+                elif widget_type == 'Label':
+                    widget.configure(bg=colors['bg'], fg=colors['fg'])
+                elif widget_type == 'Button':
+                    widget.configure(bg=colors['button_bg'], fg=colors['button_fg'],
+                                   activebackground=colors['select_bg'],
+                                   activeforeground=colors['select_fg'])
+            except tk.TclError:
+                pass
+            for child in widget.winfo_children():
+                apply_to_widget(child)
+
+        apply_to_widget(self)
+
     def _on_cancel(self):
         self.groups_to_remove = []
         self.destroy()
 
 class CategorySelectDialog(tk.Toplevel):
-    def __init__(self, parent, categories, preselected=None):
+    def __init__(self, parent, categories, preselected=None, dark_mode=False):
         super().__init__(parent)
         self.parent = parent
+        self.dark_mode = dark_mode
         self.transient(parent)
         self.grab_set()
         self.title("Select M3U Categories to Load")
@@ -353,6 +452,10 @@ class CategorySelectDialog(tk.Toplevel):
         button_frame.pack(pady=10)
         tk.Button(button_frame, text="Load Selected", command=self._on_load_selected).pack(side="left", padx=10)
         tk.Button(button_frame, text="Cancel", command=self._on_cancel).pack(side="left", padx=10)
+
+        if self.dark_mode:
+            self._apply_dark_theme()
+
         self.protocol("WM_DELETE_WINDOW", self._on_cancel)
         self.deiconify()
         self.wait_window()
@@ -362,6 +465,41 @@ class CategorySelectDialog(tk.Toplevel):
         self.selected_categories = [self.category_listbox.get(idx) for idx in selected_indices]
         self.selected_categories = ["" if cat == "[No Category]" else cat for cat in self.selected_categories]
         self.destroy()
+
+    def _apply_dark_theme(self):
+        """Applies dark theme to the dialog."""
+        colors = {
+            'bg': '#2b2b2b',
+            'fg': '#e0e0e0',
+            'button_bg': '#404040',
+            'button_fg': '#ffffff',
+            'entry_bg': '#3c3c3c',
+            'select_bg': '#0d47a1',
+            'select_fg': '#ffffff',
+        }
+
+        self.configure(bg=colors['bg'])
+        self.category_listbox.configure(bg=colors['entry_bg'], fg=colors['fg'],
+                                        selectbackground=colors['select_bg'],
+                                        selectforeground=colors['select_fg'])
+
+        def apply_to_widget(widget):
+            widget_type = widget.winfo_class()
+            try:
+                if widget_type in ('Frame', 'Labelframe'):
+                    widget.configure(bg=colors['bg'])
+                elif widget_type == 'Label':
+                    widget.configure(bg=colors['bg'], fg=colors['fg'])
+                elif widget_type == 'Button':
+                    widget.configure(bg=colors['button_bg'], fg=colors['button_fg'],
+                                   activebackground=colors['select_bg'],
+                                   activeforeground=colors['select_fg'])
+            except tk.TclError:
+                pass
+            for child in widget.winfo_children():
+                apply_to_widget(child)
+
+        apply_to_widget(self)
 
     def _on_cancel(self):
         self.selected_categories = []
