@@ -164,8 +164,8 @@ class MXMMApp:
         self.session_save_button.pack(side="left", padx=5, pady=5, expand=True, fill="x")
         self.session_load_button = tk.Button(session_button_frame, text="📂 Load Session", command=self._load_session)
         self.session_load_button.pack(side="left", padx=5, pady=5, expand=True, fill="x")
-        self.settings_save_button = tk.Button(settings_frame, text="⚙️ Save Settings", command=self._save_app_settings)
-        self.settings_save_button.pack(fill="x", expand=True, padx=5, pady=(5,0))
+        self.settings_save_button = tk.Button(session_button_frame, text="⚙️ Save Settings", command=self._save_app_settings)
+        self.settings_save_button.pack(side="left", padx=5, pady=5, expand=True, fill="x")
 
     def _create_treeview_widgets(self, parent_frame):
         """Creates the main Treeview for displaying channel data."""
