@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--threshold', type=int, help='Fuzzy match threshold (0-100, overrides config).')
     parser.add_argument('--overwrite-matches', action='store_true', help='Force re-matching for all channels, ignoring existing tvg-id values.')
     parser.add_argument('--include-groups', type=str, help='Comma-separated list of M3U group names to include (others will be excluded).')
+    parser.add_argument('--dark-mode', action='store_true', help='Enable dark mode theme for the GUI.')
     
     args = parser.parse_args()
 
@@ -30,7 +31,7 @@ def main():
     else:
         logger.info("Starting application in GUI mode.")
         root = tk.Tk()
-        app = MXMMApp(root)
+        app = MXMMApp(root, dark_mode=args.dark_mode)
         root.mainloop()
 
 if __name__ == "__main__":

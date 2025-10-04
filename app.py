@@ -17,9 +17,10 @@ CONFIG_FILE = 'matcher_app_config.ini'
 SOURCES_FILE = 'sources.json'
 
 class MXMMApp:
-    def __init__(self, master=None):
+    def __init__(self, master=None, dark_mode=False):
         self.master = master
-        
+        self.dark_mode = dark_mode
+
         # --- Data Storage & State ---
         self.m3u_channels = []
         self.xmltv_channels = []
@@ -74,6 +75,18 @@ class MXMMApp:
 
         self._create_gui_layout()
         self._apply_initial_settings()
+
+        # Apply dark theme if enabled
+        if self.dark_mode:
+            self._apply_dark_theme()
+            self._apply_widget_colors(self.master)
+            # Update treeview row colors for dark theme
+            self.tree.tag_configure('high_match', background=self.colors['high_match'], foreground=self.colors['fg'])
+            self.tree.tag_configure('good_match', background=self.colors['good_match'], foreground=self.colors['fg'])
+            self.tree.tag_configure('low_match', background=self.colors['low_match'], foreground=self.colors['fg'])
+            self.tree.tag_configure('no_match', background=self.colors['no_match'], foreground=self.colors['fg'])
+            # Fix log text widget colors (explicitly set after creation)
+            self.log_text_widget.configure(bg=self.colors['entry_bg'], fg=self.colors['fg'])
 
     def _apply_headless_settings(self):
         """Applies settings for headless (CLI) mode."""
@@ -248,6 +261,114 @@ class MXMMApp:
 
         return defaults
 
+    def _apply_dark_theme(self):
+        """Applies dark theme colors to all widgets."""
+        # Dark theme color palette
+        self.colors = {
+            'bg': '#2b2b2b',           # Main background
+            'fg': '#e0e0e0',           # Main text
+            'button_bg': '#404040',    # Button background
+            'button_fg': '#ffffff',    # Button text
+            'entry_bg': '#3c3c3c',     # Entry/text field background
+            'entry_fg': '#e0e0e0',     # Entry text
+            'frame_bg': '#2b2b2b',     # Frame background
+            'label_bg': '#2b2b2b',     # Label background
+            'label_fg': '#e0e0e0',     # Label text
+            'select_bg': '#0d47a1',    # Selection background
+            'select_fg': '#ffffff',    # Selection text
+            # Treeview row colors (dark variants)
+            'high_match': '#1b4d1b',   # Dark green
+            'good_match': '#1a3a52',   # Dark blue
+            'low_match': '#4d4d1f',    # Dark yellow/olive
+            'no_match': '#4d1f1f',     # Dark red
+        }
+
+        # Apply to root window
+        self.master.configure(bg=self.colors['bg'])
+
+        # Configure ttk Style for Treeview and other ttk widgets
+        style = ttk.Style()
+        style.theme_use('clam')  # Use clam theme as base for better customization
+
+        # Treeview styling
+        style.configure('Treeview',
+                       background=self.colors['entry_bg'],
+                       foreground=self.colors['fg'],
+                       fieldbackground=self.colors['entry_bg'],
+                       borderwidth=0)
+        style.configure('Treeview.Heading',
+                       background=self.colors['button_bg'],
+                       foreground=self.colors['fg'],
+                       relief='flat')
+        style.map('Treeview.Heading',
+                 background=[('active', self.colors['select_bg'])])
+        style.map('Treeview',
+                 background=[('selected', self.colors['select_bg'])],
+                 foreground=[('selected', self.colors['select_fg'])])
+
+        # Scrollbar styling
+        style.configure('Vertical.TScrollbar',
+                       background=self.colors['button_bg'],
+                       troughcolor=self.colors['bg'],
+                       borderwidth=0,
+                       arrowcolor=self.colors['fg'])
+        style.configure('Horizontal.TScrollbar',
+                       background=self.colors['button_bg'],
+                       troughcolor=self.colors['bg'],
+                       borderwidth=0,
+                       arrowcolor=self.colors['fg'])
+
+        # Progressbar styling
+        style.configure('TProgressbar',
+                       background=self.colors['select_bg'],
+                       troughcolor=self.colors['entry_bg'],
+                       borderwidth=0)
+
+    def _apply_widget_colors(self, widget):
+        """Recursively applies dark theme colors to a widget and its children."""
+        widget_type = widget.winfo_class()
+
+        try:
+            if widget_type in ('Frame', 'Labelframe', 'TFrame', 'TLabelframe'):
+                widget.configure(bg=self.colors['frame_bg'])
+                if widget_type in ('Labelframe', 'TLabelframe'):
+                    widget.configure(fg=self.colors['label_fg'])
+            elif widget_type == 'Label':
+                widget.configure(bg=self.colors['label_bg'], fg=self.colors['label_fg'])
+            elif widget_type == 'Button':
+                widget.configure(bg=self.colors['button_bg'], fg=self.colors['button_fg'],
+                               activebackground=self.colors['select_bg'],
+                               activeforeground=self.colors['select_fg'])
+            elif widget_type == 'Entry':
+                widget.configure(bg=self.colors['entry_bg'], fg=self.colors['entry_fg'],
+                               insertbackground=self.colors['fg'],
+                               selectbackground=self.colors['select_bg'],
+                               selectforeground=self.colors['select_fg'])
+            elif widget_type == 'Text':
+                widget.configure(bg=self.colors['entry_bg'], fg=self.colors['entry_fg'],
+                               insertbackground=self.colors['fg'],
+                               selectbackground=self.colors['select_bg'],
+                               selectforeground=self.colors['select_fg'])
+            elif widget_type == 'Checkbutton':
+                widget.configure(bg=self.colors['frame_bg'], fg=self.colors['label_fg'],
+                               selectcolor=self.colors['entry_bg'],
+                               activebackground=self.colors['frame_bg'],
+                               activeforeground=self.colors['label_fg'])
+            elif widget_type == 'Scale':
+                widget.configure(bg=self.colors['frame_bg'], fg=self.colors['label_fg'],
+                               troughcolor=self.colors['entry_bg'],
+                               activebackground=self.colors['select_bg'],
+                               highlightbackground=self.colors['frame_bg'],
+                               highlightcolor=self.colors['select_bg'])
+            elif widget_type == 'PanedWindow':
+                widget.configure(bg=self.colors['bg'], sashrelief='flat')
+        except tk.TclError:
+            pass  # Some widgets don't support all options
+
+        # Recursively apply to children
+        for child in widget.winfo_children():
+            self._apply_widget_colors(child)
+
     def _load_app_settings(self):
         """Loads application settings from config.ini."""
         try:
@@ -288,7 +409,7 @@ class MXMMApp:
 
     def _setup_gui_logger(self):
         """Sets up a custom logging handler to display logs in the GUI."""
-        gui_handler = GUILogHandler(self.log_text_widget)
+        gui_handler = GUILogHandler(self.log_text_widget, self.dark_mode)
         gui_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logger.addHandler(gui_handler)
         logger.info("GUI Logger initialized.")
@@ -313,7 +434,7 @@ class MXMMApp:
         except Exception:
             pass
         # Show category selection dialog
-        dialog = CategorySelectDialog(self.master, all_groups, preselected)
+        dialog = CategorySelectDialog(self.master, all_groups, preselected, self.dark_mode)
         selected_categories = dialog.selected_categories
         if not selected_categories:
             messagebox.showinfo("No Categories Selected", "No categories were selected for import.")
@@ -639,11 +760,12 @@ class MXMMApp:
             self._update_match_counts()
 
         ManualMatchDialog(
-            self.master, 
-            visible_channels_data, 
-            start_pos_in_visible, 
-            self.xmltv_channels, 
-            manual_match_callback
+            self.master,
+            visible_channels_data,
+            start_pos_in_visible,
+            self.xmltv_channels,
+            manual_match_callback,
+            self.dark_mode
         )
 
     def _on_tree_right_click(self, event):
@@ -686,7 +808,7 @@ class MXMMApp:
             messagebox.showwarning("No Data", "Load M3U channels first.")
             return
         unique_groups = sorted(list(set(ch.get('group_title', '') for ch in self.m3u_channels)))
-        dialog = RemoveCategoryDialog(self.master, unique_groups)
+        dialog = RemoveCategoryDialog(self.master, unique_groups, self.dark_mode)
         if dialog.groups_to_remove:
             self.m3u_channels = [ch for ch in self.m3u_channels if ch.get('group_title', '') not in dialog.groups_to_remove]
             self.processed_channels_data = [d for d in self.processed_channels_data if d['m3u_data'].get('group_title', '') not in dialog.groups_to_remove]

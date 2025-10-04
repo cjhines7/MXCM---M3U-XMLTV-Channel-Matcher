@@ -3,14 +3,25 @@ import logging
 
 # --- Custom Log Handler for GUI ---
 class GUILogHandler(logging.Handler):
-    def __init__(self, text_widget):
+    def __init__(self, text_widget, dark_mode=False):
         super().__init__()
         self.text_widget = text_widget
-        self.text_widget.tag_config('INFO', foreground='black')
-        self.text_widget.tag_config('DEBUG', foreground='gray')
-        self.text_widget.tag_config('WARNING', foreground='orange')
-        self.text_widget.tag_config('ERROR', foreground='red')
-        self.text_widget.tag_config('CRITICAL', foreground='red', font=('Arial', 10, 'bold'))
+
+        # Set colors based on theme
+        if dark_mode:
+            # Dark mode colors - high contrast on dark background
+            self.text_widget.tag_config('INFO', foreground='#e0e0e0')      # Light gray (matches main text)
+            self.text_widget.tag_config('DEBUG', foreground='#a0a0a0')     # Medium-light gray
+            self.text_widget.tag_config('WARNING', foreground='#ffb84d')   # Bright orange
+            self.text_widget.tag_config('ERROR', foreground='#ff6b6b')     # Coral red
+            self.text_widget.tag_config('CRITICAL', foreground='#ff4444', font=('Arial', 10, 'bold'))  # Bright red
+        else:
+            # Light mode colors - original colors
+            self.text_widget.tag_config('INFO', foreground='black')
+            self.text_widget.tag_config('DEBUG', foreground='gray')
+            self.text_widget.tag_config('WARNING', foreground='orange')
+            self.text_widget.tag_config('ERROR', foreground='red')
+            self.text_widget.tag_config('CRITICAL', foreground='red', font=('Arial', 10, 'bold'))
 
     def emit(self, record):
         msg = self.format(record)
