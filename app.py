@@ -409,7 +409,7 @@ class MXMMApp:
 
     def _setup_gui_logger(self):
         """Sets up a custom logging handler to display logs in the GUI."""
-        gui_handler = GUILogHandler(self.log_text_widget)
+        gui_handler = GUILogHandler(self.log_text_widget, self.dark_mode)
         gui_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logger.addHandler(gui_handler)
         logger.info("GUI Logger initialized.")
